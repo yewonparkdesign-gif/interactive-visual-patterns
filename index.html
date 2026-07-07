@@ -826,8 +826,12 @@
         </button>
       </div>
       <div class="iv-footer">
-        <span class="iv-cap">Dashboard overview — order management and analytics</span>
-        <span class="iv-count" id="pz-status">Click image to zoom 2.5×</span>
+        <span class="iv-cap" id="e-cap">Dashboard overview — order management and analytics</span>
+        <span style="display:flex;gap:10px;align-items:center">
+          <span class="iv-count" id="pz-status">1 of 3</span>
+          <button class="view-all-btn" onclick="pzNav(-1)" aria-label="Previous image">‹</button>
+          <button class="view-all-btn" onclick="pzNav(1)" aria-label="Next image">›</button>
+        </span>
       </div>
     </div>
   </div>
@@ -853,7 +857,7 @@
         <div class="pip-hint">Move mouse to inspect · zoom window appears in corner</div>
         <div id="pip-reticle"></div>
         <div id="pip-window"><div id="pip-inner"></div></div>
-        <button class="enlarge-btn" onclick="laOpen(0)" aria-label="Enlarge image">
+        <button class="enlarge-btn" onclick="laOpen(pipIdx)" aria-label="Enlarge image">
           <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
             <path d="M1 5V1H5M9 1H13V5M13 9V13H9M5 13H1V9" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
@@ -861,8 +865,12 @@
         </button>
       </div>
       <div class="iv-footer">
-        <span class="iv-cap">Dashboard overview — order management and analytics</span>
-        <span class="iv-count">Hover to zoom · click Enlarge for full-screen</span>
+        <span class="iv-cap" id="f-cap">Dashboard overview — order management and analytics</span>
+        <span style="display:flex;gap:10px;align-items:center">
+          <span class="iv-count" id="pip-status">1 of 3</span>
+          <button class="view-all-btn" onclick="pipNav(-1)" aria-label="Previous image">‹</button>
+          <button class="view-all-btn" onclick="pipNav(1)" aria-label="Next image">›</button>
+        </span>
       </div>
     </div>
   </div>
@@ -1124,7 +1132,16 @@ function magMove(e) {
 
 /* ══ E — Click-to-zoom + pan ══ */
 let pzActive = false;
+let pzIdx = 0;
 const PZ_SCALE = 2.5;
+
+function pzNav(d) {
+  if (pzActive) pzZoomOut();
+  pzIdx = (pzIdx + d + S.length) % S.length;
+  mkMock(document.getElementById('e-main'), pzIdx);
+  document.getElementById('e-cap').textContent    = S[pzIdx].cap;
+  document.getElementById('pz-status').textContent = `${pzIdx + 1} of ${S.length}`;
+}
 
 function pzToggle(e) {
   e.stopPropagation();
@@ -1137,7 +1154,6 @@ function pzZoomIn(e) {
   const inner = document.getElementById('pz-inner');
   const rect  = outer.getBoundingClientRect();
 
-  // Zoom origin = click point
   const ox = ((e.clientX - rect.left) / rect.width  * 100).toFixed(2);
   const oy = ((e.clientY - rect.top)  / rect.height * 100).toFixed(2);
   inner.style.transformOrigin = `${ox}% ${oy}%`;
@@ -1146,7 +1162,6 @@ function pzZoomIn(e) {
 
   outer.classList.add('zoomed');
   document.getElementById('pz-btn-label').textContent = 'Zoom out';
-  document.getElementById('pz-status').textContent    = 'Move mouse to pan · click or Esc to zoom out';
 }
 
 function pzZoomOut() {
@@ -1157,7 +1172,6 @@ function pzZoomOut() {
   inner.style.transform  = 'scale(1)';
   outer.classList.remove('zoomed');
   document.getElementById('pz-btn-label').textContent = 'Zoom in';
-  document.getElementById('pz-status').textContent    = 'Click image to zoom 2.5×';
 }
 
 function pzPan(e) {
@@ -1166,11 +1180,9 @@ function pzPan(e) {
   const inner = document.getElementById('pz-inner');
   const rect  = outer.getBoundingClientRect();
 
-  // Map cursor 0→1 inside the element to pan the zoomed content
   const px = (e.clientX - rect.left) / rect.width;
   const py = (e.clientY - rect.top)  / rect.height;
 
-  // Max translate so zoomed image fills the container without gaps
   const maxX = (rect.width  * (PZ_SCALE - 1)) / 2;
   const maxY = (rect.height * (PZ_SCALE - 1)) / 2;
 
@@ -1221,14 +1233,24 @@ document.addEventListener('keydown', e => {
 
 /* ══ F — Picture-in-Picture ══ */
 const PIP_ZOOM   = 2.5;
-const PIP_W      = 220;   // px  — matches CSS
-const PIP_H      = 124;   // px
+const PIP_W      = 220;
+const PIP_H      = 124;
 
 let pipSeeded = false;
+let pipIdx = 0;
+
+function pipNav(d) {
+  pipIdx = (pipIdx + d + S.length) % S.length;
+  pipSeeded = false;
+  mkMock(document.getElementById('f-main'), pipIdx);
+  document.getElementById('f-cap').textContent     = S[pipIdx].cap;
+  document.getElementById('pip-status').textContent = `${pipIdx + 1} of ${S.length}`;
+  pipLeave();
+}
 
 function pipEnter() {
   if (!pipSeeded) {
-    mkMock(document.getElementById('pip-inner'), 0);
+    mkMock(document.getElementById('pip-inner'), pipIdx);
     pipSeeded = true;
   }
   document.getElementById('pip-window').style.display  = 'block';
